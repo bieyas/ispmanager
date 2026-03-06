@@ -1,0 +1,7 @@
+node_modules
+backend/dist
+frontend/.next
+frontend/tsconfig.tsbuildinfo
+backend/dist/tsconfig.tsbuildinfo
+backend/dist/tsconfig.build.tsbuildinfo
+package-lock.json
