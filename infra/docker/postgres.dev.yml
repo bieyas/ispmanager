@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ispmanager-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ispmanager
+      POSTGRES_USER: ispmanager
+      POSTGRES_PASSWORD: ispmanager
+    ports:
+      - "5433:5432"
+    volumes:
+      - ispmanager_pgdata:/var/lib/postgresql/data
+
+volumes:
+  ispmanager_pgdata:
