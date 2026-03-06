@@ -22,3 +22,4 @@ Baseline repository untuk pengembangan platform ISP Manager.
 - Gunakan pendekatan modular monolith (microservice-ready).
 - Dilarang direct table access lintas domain di layer repository.
 - Perubahan lintas domain wajib lewat contract API/event.
+# ispmanager
