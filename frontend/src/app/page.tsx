@@ -2,16 +2,21 @@ import Link from 'next/link';
 
 export default function HomePage() {
   return (
-    <main style={{ padding: '24px' }}>
-      <h1>ISP Manager</h1>
-      <ul>
-        <li>
-          <Link href="/login">Login</Link>
-        </li>
-        <li>
-          <Link href="/dashboard">Dashboard</Link>
-        </li>
-      </ul>
+    <main className="login-shell">
+      <section className="login-card">
+        <h1 style={{ marginTop: 0 }}>ISP Manager</h1>
+        <p className="muted">
+          Platform operasional ISP untuk autentikasi, customer, dan workflow dasar.
+        </p>
+        <div className="controls" style={{ marginTop: '14px' }}>
+          <Link className="btn" href="/login">
+            Go to Login
+          </Link>
+          <Link className="btn secondary" href="/dashboard">
+            Open Dashboard
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

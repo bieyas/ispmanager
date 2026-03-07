@@ -7,11 +7,13 @@
     "build": "next build",
     "start": "next start -p 3000",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --max-warnings=0",
+    "test": "echo \"No frontend tests yet\"",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css}\"",
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css}\""
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.66.0",
     "next": "^15.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

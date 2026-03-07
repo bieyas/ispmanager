@@ -1,0 +1,169 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  adminUsers  AdminUser[]
+  permissions RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  code        String           @unique
+  name        String
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  assignedAt   DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model AdminUser {
+  id                    String    @id @default(uuid())
+  fullName              String
+  email                 String    @unique
+  passwordHash          String    @map("password_hash")
+  refreshTokenHash      String?   @map("refresh_token_hash")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
+  isActive              Boolean   @default(true) @map("is_active")
+  roleId                String    @map("role_id")
+  role                  Role      @relation(fields: [roleId], references: [id])
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@index([roleId])
+  @@map("admin_users")
+}
+
+model Customer {
+  id               String          @id @default(uuid())
+  customerCode     String          @unique @map("customer_code")
+  fullName         String          @map("full_name")
+  email            String?
+  phone            String?
+  isActive         Boolean         @default(true) @map("is_active")
+  currentPackageId String?         @map("current_package_id")
+  currentPackage   InternetPackage? @relation(fields: [currentPackageId], references: [id], onDelete: SetNull)
+  invoices         Invoice[]
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  @@index([currentPackageId])
+
+  @@map("customers")
+}
+
+model InternetPackage {
+  id           String      @id @default(uuid())
+  packageCode  String      @unique @map("package_code")
+  packageName  String      @map("package_name")
+  downloadKbps Int         @map("download_kbps")
+  uploadKbps   Int         @map("upload_kbps")
+  monthlyPrice Int         @map("monthly_price")
+  pppProfileId String      @map("ppp_profile_id")
+  pppProfile   PppProfile  @relation(fields: [pppProfileId], references: [id], onDelete: Restrict)
+  isActive     Boolean     @default(true) @map("is_active")
+  customers    Customer[]
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  @@index([pppProfileId])
+
+  @@map("internet_packages")
+}
+
+model PppProfile {
+  id             String            @id @default(uuid())
+  profileCode    String            @unique @map("profile_code")
+  profileName    String            @map("profile_name")
+  localAddress   String            @map("local_address")
+  remotePoolName String            @map("remote_pool_name")
+  dnsServers     String?           @map("dns_servers")
+  onlyOne        Boolean           @default(true) @map("only_one")
+  routerName     String?           @map("router_name")
+  isActive       Boolean           @default(true) @map("is_active")
+  packages       InternetPackage[]
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+
+  @@map("ppp_profiles")
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  OVERDUE
+}
+
+enum InvoiceSource {
+  MANUAL
+  AUTO
+}
+
+model Invoice {
+  id                String         @id @default(uuid())
+  invoiceCode       String         @unique @map("invoice_code")
+  customerId        String         @map("customer_id")
+  customer          Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  billingYear       Int            @map("billing_year")
+  billingMonth      Int            @map("billing_month")
+  source            InvoiceSource  @default(MANUAL)
+  amountDue         Int            @map("amount_due")
+  amountPaid        Int            @default(0) @map("amount_paid")
+  status            InvoiceStatus  @default(ISSUED)
+  dueDate           DateTime       @map("due_date")
+  issuedAt          DateTime       @default(now()) @map("issued_at")
+  paidAt            DateTime?      @map("paid_at")
+  notes             String?
+  payments          InvoicePayment[]
+  createdAt         DateTime       @default(now()) @map("created_at")
+  updatedAt         DateTime       @updatedAt @map("updated_at")
+
+  @@index([customerId])
+  @@index([billingYear, billingMonth])
+  @@index([status])
+  @@index([dueDate])
+  @@unique([customerId, billingYear, billingMonth], map: "invoices_customer_id_billing_year_billing_month_key")
+  @@map("invoices")
+}
+
+model InvoicePayment {
+  id              String    @id @default(uuid())
+  invoiceId       String    @map("invoice_id")
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount          Int
+  paidAt          DateTime  @default(now()) @map("paid_at")
+  paymentMethod   String?   @map("payment_method")
+  referenceNumber String?   @map("reference_number")
+  notes           String?
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@index([invoiceId])
+  @@map("invoice_payments")
+}
