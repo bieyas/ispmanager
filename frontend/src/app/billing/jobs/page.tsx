@@ -67,12 +67,18 @@ export default function BillingJobsPage() {
             <button className="btn" onClick={() => void runOverdue()} disabled={runningOverdue}>
               {runningOverdue ? 'Running...' : 'Run Overdue Job'}
             </button>
-            {overdueResult ? <p className="muted" style={{ marginTop: '10px' }}>{overdueResult}</p> : null}
+            {overdueResult ? (
+              <p className="muted" style={{ marginTop: '10px' }}>
+                {overdueResult}
+              </p>
+            ) : null}
           </div>
 
           <div className="panel">
             <h2 style={{ marginTop: 0 }}>Run Monthly Generation</h2>
-            <p className="muted">Generate invoice bulanan otomatis dari customer aktif + package aktif.</p>
+            <p className="muted">
+              Generate invoice bulanan otomatis dari customer aktif + package aktif.
+            </p>
             <div className="controls" style={{ marginTop: '8px' }}>
               <input
                 className="input"
@@ -96,7 +102,11 @@ export default function BillingJobsPage() {
             <button className="btn" onClick={() => void runMonthly()} disabled={runningMonthly}>
               {runningMonthly ? 'Running...' : 'Run Monthly Job'}
             </button>
-            {monthlyResult ? <p className="muted" style={{ marginTop: '10px' }}>{monthlyResult}</p> : null}
+            {monthlyResult ? (
+              <p className="muted" style={{ marginTop: '10px' }}>
+                {monthlyResult}
+              </p>
+            ) : null}
           </div>
         </div>
 

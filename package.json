@@ -23,8 +23,11 @@
       "npm run lint --workspace backend",
       "npm run format:check --workspace backend"
     ],
-    "frontend/src/**/*.{js,jsx,ts,tsx,css}": [
+    "frontend/src/**/*.{js,jsx,ts,tsx}": [
       "npm run lint --workspace frontend",
+      "npm run format:check --workspace frontend"
+    ],
+    "frontend/src/**/*.css": [
       "npm run format:check --workspace frontend"
     ]
   },

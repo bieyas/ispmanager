@@ -25,7 +25,10 @@ export default function PppProfileForm({
   const [onlyOne, setOnlyOne] = useState(initialValue?.onlyOne ?? true);
   const [isActive, setIsActive] = useState(initialValue?.isActive ?? true);
 
-  const title = useMemo(() => (isEditMode ? 'Update PPP Profile' : 'Create PPP Profile'), [isEditMode]);
+  const title = useMemo(
+    () => (isEditMode ? 'Update PPP Profile' : 'Create PPP Profile'),
+    [isEditMode],
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

@@ -59,7 +59,9 @@ export default function NewPackagePage() {
     <DashboardLayout title="Create Package" subtitle="Tambah paket internet baru untuk assignment.">
       <section className="page">
         <Link href="/packages">Back to packages</Link>
-        {pppProfilesQuery.isError ? <p className="alert error">Failed to load PPP profiles.</p> : null}
+        {pppProfilesQuery.isError ? (
+          <p className="alert error">Failed to load PPP profiles.</p>
+        ) : null}
         <div style={{ marginTop: '14px' }}>
           <PackageForm
             onSubmit={handleCreate}

@@ -157,7 +157,10 @@ export class RealApiAdapter implements ApiAdapter {
     });
   }
 
-  async createPppProfile(accessToken: string, payload: CreatePppProfileRequest): Promise<PppProfile> {
+  async createPppProfile(
+    accessToken: string,
+    payload: CreatePppProfileRequest,
+  ): Promise<PppProfile> {
     return this.request<PppProfile>('/ppp-profiles', {
       method: 'POST',
       headers: {
@@ -255,7 +258,10 @@ export class RealApiAdapter implements ApiAdapter {
     });
   }
 
-  async listInvoices(accessToken: string, query: ListInvoicesRequest = {}): Promise<InvoiceListResponse> {
+  async listInvoices(
+    accessToken: string,
+    query: ListInvoicesRequest = {},
+  ): Promise<InvoiceListResponse> {
     const params = new URLSearchParams();
     if (query.search) {
       params.set('search', query.search);

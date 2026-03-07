@@ -144,8 +144,8 @@ export default function CustomerDetailPage() {
                     <option value="">No Package</option>
                     {packageRows.map((item) => (
                       <option key={item.id} value={item.id}>
-                        {item.packageCode} - {item.packageName} ({item.downloadKbps}/{item.uploadKbps}{' '}
-                        Kbps)
+                        {item.packageCode} - {item.packageName} ({item.downloadKbps}/
+                        {item.uploadKbps} Kbps)
                       </option>
                     ))}
                   </select>

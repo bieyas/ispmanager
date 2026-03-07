@@ -112,7 +112,9 @@ export default function BillingPage() {
                   <td>Rp {formatRupiah(item.amountDue)}</td>
                   <td>Rp {formatRupiah(item.amountPaid)}</td>
                   <td>
-                    <span className={`status-pill ${item.status === 'PAID' ? 'success' : 'danger'}`}>
+                    <span
+                      className={`status-pill ${item.status === 'PAID' ? 'success' : 'danger'}`}
+                    >
                       {item.status}
                     </span>
                   </td>

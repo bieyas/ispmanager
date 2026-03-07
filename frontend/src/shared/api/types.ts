@@ -257,7 +257,10 @@ export interface ApiAdapter {
     id: string,
     payload: UpdateCustomerRequest,
   ): Promise<Customer>;
-  listPppProfiles(accessToken: string, query?: ListPppProfilesRequest): Promise<PppProfileListResponse>;
+  listPppProfiles(
+    accessToken: string,
+    query?: ListPppProfilesRequest,
+  ): Promise<PppProfileListResponse>;
   getPppProfileById(accessToken: string, id: string): Promise<PppProfile>;
   createPppProfile(accessToken: string, payload: CreatePppProfileRequest): Promise<PppProfile>;
   updatePppProfile(

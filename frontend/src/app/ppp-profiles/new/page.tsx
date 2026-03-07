@@ -19,7 +19,12 @@ export default function NewPppProfilePage() {
     setSubmitting(true);
     setErrorMessage(null);
     try {
-      if (!payload.profileCode || !payload.profileName || !payload.localAddress || !payload.remotePoolName) {
+      if (
+        !payload.profileCode ||
+        !payload.profileName ||
+        !payload.localAddress ||
+        !payload.remotePoolName
+      ) {
         throw new Error('Profile code, name, local address, and remote pool are required');
       }
 

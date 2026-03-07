@@ -72,8 +72,12 @@ export default function PackageDetailPage() {
             Loading package...
           </p>
         ) : null}
-        {packageQuery.isError ? <p className="alert error">Failed to load package detail.</p> : null}
-        {pppProfilesQuery.isError ? <p className="alert error">Failed to load PPP profiles.</p> : null}
+        {packageQuery.isError ? (
+          <p className="alert error">Failed to load package detail.</p>
+        ) : null}
+        {pppProfilesQuery.isError ? (
+          <p className="alert error">Failed to load PPP profiles.</p>
+        ) : null}
 
         {item ? (
           <div className="two-col" style={{ marginTop: '14px' }}>

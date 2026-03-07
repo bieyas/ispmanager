@@ -250,7 +250,10 @@ export class MockApiAdapter implements ApiAdapter {
     return found;
   }
 
-  async createPppProfile(_accessToken: string, payload: CreatePppProfileRequest): Promise<PppProfile> {
+  async createPppProfile(
+    _accessToken: string,
+    payload: CreatePppProfileRequest,
+  ): Promise<PppProfile> {
     const now = new Date().toISOString();
     const created: PppProfile = {
       id: `mock-ppp-${this.pppProfiles.length + 1}`,
@@ -401,7 +404,7 @@ export class MockApiAdapter implements ApiAdapter {
     const packageValue =
       payload.packageId === null
         ? null
-        : this.internetPackages.find((item) => item.id === payload.packageId) ?? null;
+        : (this.internetPackages.find((item) => item.id === payload.packageId) ?? null);
 
     if (payload.packageId !== null && !packageValue) {
       throw new Error('Package not found');

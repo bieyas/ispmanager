@@ -14,7 +14,10 @@ export default function PppProfilesPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
 
-  const queryKey = useMemo(() => ['ppp-profiles', search, page, pageSize], [page, pageSize, search]);
+  const queryKey = useMemo(
+    () => ['ppp-profiles', search, page, pageSize],
+    [page, pageSize, search],
+  );
 
   const profilesQuery = useQuery({
     queryKey,

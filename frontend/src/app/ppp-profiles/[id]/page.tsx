@@ -57,7 +57,9 @@ export default function PppProfileDetailPage() {
             Loading profile...
           </p>
         ) : null}
-        {profileQuery.isError ? <p className="alert error">Failed to load profile detail.</p> : null}
+        {profileQuery.isError ? (
+          <p className="alert error">Failed to load profile detail.</p>
+        ) : null}
 
         {profile ? (
           <div className="two-col" style={{ marginTop: '14px' }}>
@@ -82,7 +84,11 @@ export default function PppProfileDetailPage() {
               </p>
             </div>
             <div className="panel">
-              <PppProfileForm initialValue={profile} onSubmit={handleUpdate} submitting={submitting} />
+              <PppProfileForm
+                initialValue={profile}
+                onSubmit={handleUpdate}
+                submitting={submitting}
+              />
               {message ? (
                 <p className="muted" style={{ marginTop: '10px' }}>
                   {message}
