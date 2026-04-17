@@ -123,10 +123,15 @@ export function App() {
     return raw ? JSON.parse(raw) : null;
   });
   const [overview, setOverview] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [status, setStatus] = useState("Gunakan akun customer portal yang diberikan admin.");
   const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "" });
+  const [profileForm, setProfileForm] = useState({ fullName: "", phone: "", email: "" });
+  const [paymentForm, setPaymentForm] = useState({ invoiceId: "", paymentDate: "", amount: "", method: "transfer", referenceNo: "", notes: "" });
   const [submittingTicket, setSubmittingTicket] = useState(false);
   const [replyingTicketId, setReplyingTicketId] = useState("");
+  const [submittingProfile, setSubmittingProfile] = useState(false);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
   const apiBaseUrl = useMemo(() => getDefaultApiBaseUrl(), []);
 
   async function apiFetch(path, options = {}) {
@@ -146,12 +151,19 @@ export function App() {
   }
 
   async function loadPortal() {
-    const [me, portalOverview] = await Promise.all([
+    const [me, portalOverview, customerProfile] = await Promise.all([
       apiFetch("/customer-auth/me"),
       apiFetch("/customer-portal/overview"),
+      apiFetch("/customer-portal/profile"),
     ]);
     setCustomerSession(me);
     setOverview(portalOverview);
+    setProfile(customerProfile);
+    setProfileForm({
+      fullName: customerProfile.fullName || "",
+      phone: customerProfile.phone || "",
+      email: customerProfile.email || "",
+    });
     localStorage.setItem(storageKeys.session, JSON.stringify(me));
   }
 
@@ -431,6 +443,131 @@ export function App() {
                   Simpan Password Baru
                 </button>
                 <p className="text-sm text-slate-500">{status}</p>
+              </form>
+            </Card>
+
+            <Card>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 ring-1 ring-sky-100">
+                  <UserCircle2 className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-sky-500">Profil</p>
+                  <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-slate-900">Edit data profil pelanggan</h2>
+                </div>
+              </div>
+              <form
+                className="mt-5 grid gap-3"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  try {
+                    setSubmittingProfile(true);
+                    await apiFetch("/customer-portal/profile", {
+                      method: "PUT",
+                      body: JSON.stringify(profileForm),
+                    });
+                    setStatus("Profil pelanggan berhasil diperbarui.");
+                    await loadPortal();
+                  } catch (error) {
+                    setStatus(error.message || "Gagal memperbarui profil.");
+                  } finally {
+                    setSubmittingProfile(false);
+                  }
+                }}
+              >
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Nama Lengkap</span>
+                  <input type="text" value={profileForm.fullName} onChange={(event) => setProfileForm((current) => ({ ...current, fullName: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Nomor Telepon</span>
+                  <input type="tel" value={profileForm.phone} onChange={(event) => setProfileForm((current) => ({ ...current, phone: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Email</span>
+                  <input type="email" value={profileForm.email} onChange={(event) => setProfileForm((current) => ({ ...current, email: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" />
+                </label>
+                <button disabled={submittingProfile} className="mt-1 inline-flex items-center justify-center rounded-full bg-sky-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+                  {submittingProfile ? "Menyimpan..." : "Simpan Profil"}
+                </button>
+              </form>
+            </Card>
+
+            <Card>
+              <div className="flex items-center gap-3">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 ring-1 ring-purple-100">
+                  <CreditCard className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.22em] text-purple-500">Pembayaran</p>
+                  <h2 className="mt-1 text-xl font-black tracking-[-0.04em] text-slate-900">Upload bukti pembayaran</h2>
+                </div>
+              </div>
+              <form
+                className="mt-5 grid gap-3"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  try {
+                    setSubmittingPayment(true);
+                    const payload = {
+                      invoiceId: paymentForm.invoiceId,
+                      paymentDate: paymentForm.paymentDate,
+                      amount: parseFloat(paymentForm.amount),
+                      method: paymentForm.method,
+                      referenceNo: paymentForm.referenceNo || null,
+                      notes: paymentForm.notes || null,
+                    };
+                    await apiFetch("/customer-portal/payments", {
+                      method: "POST",
+                      body: JSON.stringify(payload),
+                    });
+                    setPaymentForm({ invoiceId: "", paymentDate: "", amount: "", method: "transfer", referenceNo: "", notes: "" });
+                    setStatus("Pembayaran berhasil diunggah. Admin akan memverifikasi pembayaran Anda.");
+                    await loadPortal();
+                  } catch (error) {
+                    setStatus(error.message || "Gagal mengunggah pembayaran.");
+                  } finally {
+                    setSubmittingPayment(false);
+                  }
+                }}
+              >
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Invoice</span>
+                  <select value={paymentForm.invoiceId} onChange={(event) => setPaymentForm((current) => ({ ...current, invoiceId: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" required>
+                    <option value="">Pilih invoice</option>
+                    {overview?.invoices?.filter(inv => inv.status !== "paid").map((item) => (
+                      <option key={item.id} value={item.id}>{item.invoiceNo} - {formatCurrency(item.totalAmount)}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Tanggal Pembayaran</span>
+                  <input type="date" value={paymentForm.paymentDate} onChange={(event) => setPaymentForm((current) => ({ ...current, paymentDate: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" required />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Jumlah</span>
+                  <input type="number" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm((current) => ({ ...current, amount: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" required />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Metode Pembayaran</span>
+                  <select value={paymentForm.method} onChange={(event) => setPaymentForm((current) => ({ ...current, method: event.target.value }))} className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" required>
+                    <option value="transfer">Transfer Bank</option>
+                    <option value="cash">Tunai</option>
+                    <option value="check">Cek</option>
+                    <option value="other">Lainnya</option>
+                  </select>
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Nomor Referensi</span>
+                  <input type="text" value={paymentForm.referenceNo} onChange={(event) => setPaymentForm((current) => ({ ...current, referenceNo: event.target.value }))} placeholder="No. transfer, no. cek, dll" className="h-12 rounded-2xl border border-slate-200 px-4 outline-none focus:border-emerald-400" />
+                </label>
+                <label className="grid gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">Catatan</span>
+                  <textarea value={paymentForm.notes} onChange={(event) => setPaymentForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Catatan tambahan tentang pembayaran..." className="min-h-20 rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-emerald-400" />
+                </label>
+                <button disabled={submittingPayment} className="mt-1 inline-flex items-center justify-center rounded-full bg-purple-600 px-5 py-3 text-sm font-bold text-white disabled:opacity-60">
+                  {submittingPayment ? "Mengunggah..." : "Unggah Pembayaran"}
+                </button>
               </form>
             </Card>
           </div>

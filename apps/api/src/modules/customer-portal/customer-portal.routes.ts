@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../../lib/db.js";
 import { sendCreated, sendError, sendOk } from "../../lib/http.js";
 import { authenticateCustomer } from "../../middlewares/authenticate-customer.js";
@@ -354,6 +355,136 @@ customerPortalRouter.post("/tickets/:id/comments", async (req, res, next) => {
       ...comment,
       actor: getTicketCommentActorSummary(comment),
     }, "customer ticket comment created");
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// Profile endpoints
+customerPortalRouter.get("/profile", async (req, res, next) => {
+  try {
+    const customer = await db.customer.findUnique({
+      where: { id: req.currentCustomer!.customerId },
+      select: {
+        id: true,
+        customerCode: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        serviceAddresses: {
+          select: {
+            id: true,
+            address: true,
+            city: true,
+            province: true,
+            postalCode: true,
+            latitude: true,
+            longitude: true,
+            isPrimary: true,
+          },
+        },
+      },
+    });
+
+    return sendOk(res, customer, "customer profile loaded");
+  } catch (error) {
+    return next(error);
+  }
+});
+
+const updateCustomerProfileSchema = z.object({
+  fullName: z.string().trim().min(1).optional(),
+  phone: z.string().trim().optional(),
+  email: z.string().email().optional(),
+});
+
+customerPortalRouter.put("/profile", async (req, res, next) => {
+  try {
+    const parsed = updateCustomerProfileSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return sendError(res, 400, "Invalid profile update payload", parsed.error.flatten());
+    }
+
+    const customer = await db.customer.update({
+      where: { id: req.currentCustomer!.customerId },
+      data: {
+        ...(parsed.data.fullName ? { fullName: parsed.data.fullName } : {}),
+        ...(parsed.data.phone ? { phone: parsed.data.phone } : {}),
+        ...(parsed.data.email ? { email: parsed.data.email } : {}),
+      },
+      select: {
+        id: true,
+        customerCode: true,
+        fullName: true,
+        phone: true,
+        email: true,
+      },
+    });
+
+    return sendOk(res, customer, "customer profile updated");
+  } catch (error) {
+    return next(error);
+  }
+});
+
+// Payment upload endpoint
+const uploadPaymentSchema = z.object({
+  invoiceId: z.string().uuid(),
+  paymentDate: z.string().date(),
+  amount: z.number().positive(),
+  method: z.string().trim().min(1),
+  referenceNo: z.string().trim().optional(),
+  notes: z.string().trim().optional(),
+});
+
+customerPortalRouter.post("/payments", async (req, res, next) => {
+  try {
+    const parsed = uploadPaymentSchema.safeParse(req.body);
+
+    if (!parsed.success) {
+      return sendError(res, 400, "Invalid payment upload payload", parsed.error.flatten());
+    }
+
+    // Verify invoice belongs to customer
+    const invoice = await db.invoice.findFirst({
+      where: {
+        id: parsed.data.invoiceId,
+        subscription: {
+          customerId: req.currentCustomer!.customerId,
+        },
+      },
+      select: { id: true, totalAmount: true },
+    });
+
+    if (!invoice) {
+      return sendError(res, 400, "Invoice not found");
+    }
+
+    // Create payment as pending
+    const payment = await db.payment.create({
+      data: {
+        customerId: req.currentCustomer!.customerId,
+        invoiceId: parsed.data.invoiceId,
+        paymentNo: `CUSTOMER-${Date.now()}`,
+        paymentDate: new Date(parsed.data.paymentDate),
+        amount: parsed.data.amount,
+        method: parsed.data.method,
+        referenceNo: parsed.data.referenceNo || null,
+        notes: parsed.data.notes || null,
+        status: "pending",
+      },
+      select: {
+        id: true,
+        paymentNo: true,
+        paymentDate: true,
+        amount: true,
+        method: true,
+        status: true,
+      },
+    });
+
+    return sendCreated(res, payment, "customer payment uploaded - pending verification");
   } catch (error) {
     return next(error);
   }
