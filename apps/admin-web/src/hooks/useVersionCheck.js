@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 
-export function useVersionCheck(apiBaseUrl, onUpdateAvailable) {
+export function useVersionCheck(apiBaseUrl, onUpdateAvailable, isAdmin = false) {
     const [currentVersion, setCurrentVersion] = useState(null);
     const [checkInterval, setCheckInterval] = useState(5 * 60 * 1000); // 5 menit
 
     useEffect(() => {
+        // Hanya check version jika user adalah admin
+        if (!isAdmin) return;
+
         // Set initial version dari window atau fallback ke 0.1.0
         const initialVersion = window.__APP_VERSION__ || '0.1.0';
         setCurrentVersion(initialVersion);
@@ -52,7 +55,7 @@ export function useVersionCheck(apiBaseUrl, onUpdateAvailable) {
         const intervalId = setInterval(checkVersion, checkInterval);
 
         return () => clearInterval(intervalId);
-    }, [apiBaseUrl, checkInterval, currentVersion, onUpdateAvailable]);
+    }, [apiBaseUrl, checkInterval, currentVersion, onUpdateAvailable, isAdmin]);
 
     return { currentVersion };
 }

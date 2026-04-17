@@ -349,7 +349,7 @@ export function App() {
     deleteServicePlan,
   } = useServicePlansPage({ apiFetch, servicePlans, refreshCurrentRoute });
 
-  // Version checking for auto-update
+  // Version checking for auto-update (only for admin users)
   useVersionCheck(apiBaseUrl, (newVersion) => {
     const userConfirmed = window.confirm(
       `📦 Update tersedia: ${newVersion}\n\nReload aplikasi sekarang untuk mendapatkan fitur dan perbaikan terbaru?`
@@ -357,7 +357,7 @@ export function App() {
     if (userConfirmed) {
       window.location.reload();
     }
-  });
+  }, user?.role?.code === "admin");
 
   useEffect(() => {
     if (!token) return;
