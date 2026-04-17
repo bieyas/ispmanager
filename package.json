@@ -1,0 +1,20 @@
+{
+  "name": "ispmanager",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "api:dev": "pnpm --filter @ispmanager/api dev",
+    "api:build": "pnpm --filter @ispmanager/api build",
+    "admin-web:dev": "pnpm --filter @ispmanager/admin-web dev",
+    "admin-web:build": "pnpm --filter @ispmanager/admin-web build",
+    "customer-portal:dev": "pnpm --filter @ispmanager/customer-portal dev",
+    "customer-portal:build": "pnpm --filter @ispmanager/customer-portal build",
+    "db:format": "pnpm --filter @ispmanager/db prisma:format",
+    "db:generate": "pnpm --filter @ispmanager/db prisma:generate",
+    "db:seed": "pnpm --filter @ispmanager/db db:seed",
+    "db:migrate:status": "pnpm --filter @ispmanager/db prisma:migrate:status",
+    "db:migrate:deploy": "pnpm --filter @ispmanager/db prisma:migrate:deploy",
+    "db:migrate:dev": "pnpm --filter @ispmanager/db prisma:migrate:dev"
+  }
+}
