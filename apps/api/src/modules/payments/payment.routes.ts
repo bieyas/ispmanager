@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Router, Express } from "express";
+import { Prisma } from "@ispmanager/db";
 import { writeAuditLog } from "../../lib/audit.js";
 import { db } from "../../lib/db.js";
 import { sendCreated, sendError, sendOk } from "../../lib/http.js";
@@ -9,7 +10,7 @@ import { createPayment, rejectPayment, verifyPaymentAndApplyEffects } from "./pa
 
 export const paymentRouter = Router();
 
-function getPaymentScope(req: Express.Request) {
+function getPaymentScope(req: Express.Request): Prisma.PaymentWhereInput | null {
   const currentUser = req.currentUser;
 
   if (!currentUser) {
@@ -20,8 +21,22 @@ function getPaymentScope(req: Express.Request) {
     return {};
   }
 
+  // Tech/Sales: payments they collected OR from customers they created
   return {
-    collectedByUserId: currentUser.id,
+    OR: [
+      // Payments they collected
+      {
+        collectedByUserId: currentUser.id,
+      },
+      // Payments from customers they created
+      {
+        customer: {
+          activatedFromProspect: {
+            createdByUserId: currentUser.id,
+          },
+        },
+      },
+    ],
   };
 }
 
@@ -220,6 +235,20 @@ paymentRouter.post("/:id/verify", authorize("payments.verify"), async (req, res,
       return sendError(res, 400, "Invalid payment verification payload", parsed.error.flatten());
     }
 
+    // Check scope before processing
+    const scope = getPaymentScope(req);
+    const accessiblePayment = await db.payment.findFirst({
+      where: {
+        id: paymentId,
+        ...(scope ?? {}),
+      },
+      select: { id: true },
+    });
+
+    if (!accessiblePayment) {
+      return sendError(res, 404, "Payment not found");
+    }
+
     try {
       const result = await verifyPaymentAndApplyEffects({
         paymentId,
@@ -326,6 +355,20 @@ paymentRouter.post("/:id/reject", authorize("payments.reject"), async (req, res,
 
     if (!parsed.success) {
       return sendError(res, 400, "Invalid payment reject payload", parsed.error.flatten());
+    }
+
+    // Check scope before processing
+    const scope = getPaymentScope(req);
+    const accessiblePayment = await db.payment.findFirst({
+      where: {
+        id: paymentId,
+        ...(scope ?? {}),
+      },
+      select: { id: true },
+    });
+
+    if (!accessiblePayment) {
+      return sendError(res, 404, "Payment not found");
     }
 
     try {
