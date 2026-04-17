@@ -1,4 +1,5 @@
-import { Router } from "express";
+import { Router, Express } from "express";
+import { Prisma } from "@ispmanager/db";
 import { writeAuditLog } from "../../lib/audit.js";
 import { db } from "../../lib/db.js";
 import { sendCreated, sendError, sendOk } from "../../lib/http.js";
@@ -21,6 +22,35 @@ import {
 
 export const cashTransactionRouter = Router();
 
+// Helper function untuk build scope based on user role
+function getCashTransactionScope(req: Express.Request): Prisma.CashTransactionWhereInput | null {
+  const currentUser = req.currentUser;
+  
+  if (!currentUser || currentUser.role.code === "admin") {
+    return null;  // Admin: akses semua
+  }
+
+  // Tech/Sales: hanya cash transaction dari customer mereka atau yang mereka create
+  return {
+    OR: [
+      // Cash transactions from their created customers
+      {
+        subscription: {
+          customer: {
+            activatedFromProspect: {
+              createdByUserId: currentUser.id,
+            },
+          },
+        },
+      },
+      // Cash transactions they created directly
+      {
+        createdByUserId: currentUser.id,
+      },
+    ],
+  };
+}
+
 cashTransactionRouter.use(authenticate);
 
 cashTransactionRouter.get(
@@ -34,7 +64,8 @@ cashTransactionRouter.get(
         return sendError(res, 400, "Invalid cash transaction query", parsedQuery.error.flatten());
       }
 
-      const cashTransactions = await listCashTransactions(parsedQuery.data);
+      const scope = getCashTransactionScope(req);
+      const cashTransactions = await listCashTransactions(parsedQuery.data, scope ?? undefined);
 
       return sendOk(res, cashTransactions, "cash transactions loaded");
     } catch (error) {
@@ -54,7 +85,8 @@ cashTransactionRouter.get(
         return sendError(res, 400, "Invalid cash transaction export query", parsedQuery.error.flatten());
       }
 
-      const cashTransactions = await listCashTransactions(parsedQuery.data);
+      const scope = getCashTransactionScope(req);
+      const cashTransactions = await listCashTransactions(parsedQuery.data, scope ?? undefined);
       const rows = [
         [
           "transaction_no",
@@ -116,7 +148,8 @@ cashTransactionRouter.get(
         return sendError(res, 400, "Invalid cash transaction export query", parsedQuery.error.flatten());
       }
 
-      const cashTransactions = await listCashTransactions(parsedQuery.data);
+      const scope = getCashTransactionScope(req);
+      const cashTransactions = await listCashTransactions(parsedQuery.data, scope ?? undefined);
       const totals = cashTransactions.reduce(
         (accumulator, item) => {
           const amount = Number(item.amount.toString());

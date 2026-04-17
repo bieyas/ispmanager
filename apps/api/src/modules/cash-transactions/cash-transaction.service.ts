@@ -89,9 +89,14 @@ export function buildCashTransactionWhere(filters: CashTransactionListFilters) {
   };
 }
 
-export async function listCashTransactions(filters: CashTransactionListFilters) {
+export async function listCashTransactions(filters: CashTransactionListFilters, userScope?: Prisma.CashTransactionWhereInput) {
+  const where: Prisma.CashTransactionWhereInput = {
+    ...buildCashTransactionWhere(filters),
+    ...(userScope ?? {}),
+  };
+
   return db.cashTransaction.findMany({
-    where: buildCashTransactionWhere(filters),
+    where,
     take: 200,
     orderBy: [{ transactionDate: "desc" }, { createdAt: "desc" }],
     include: {

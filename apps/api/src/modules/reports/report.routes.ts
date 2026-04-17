@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, Express } from "express";
 import { Prisma } from "@ispmanager/db";
 import { db } from "../../lib/db.js";
 import { sendError, sendOk } from "../../lib/http.js";
@@ -12,6 +12,99 @@ const summaryQuerySchema = z.object({
 });
 
 export const reportRouter = Router();
+
+// Helper function untuk build scope based on user role
+function getProspectReportScope(req: Express.Request): Prisma.ProspectWhereInput {
+  const currentUser = req.currentUser;
+  
+  if (!currentUser || currentUser.role.code === "admin") {
+    return {};
+  }
+
+  // Tech/Sales: hanya prospect yang mereka create
+  return {
+    createdByUserId: currentUser.id,
+  };
+}
+
+function getCustomerReportScope(req: Express.Request): Prisma.CustomerWhereInput {
+  const currentUser = req.currentUser;
+  
+  if (!currentUser || currentUser.role.code === "admin") {
+    return {};
+  }
+
+  // Tech/Sales: hanya customer dari prospect yang mereka create
+  return {
+    activatedFromProspect: {
+      createdByUserId: currentUser.id,
+    },
+  };
+}
+
+function getSubscriptionReportScope(req: Express.Request): Prisma.SubscriptionWhereInput {
+  const currentUser = req.currentUser;
+  
+  if (!currentUser || currentUser.role.code === "admin") {
+    return {};
+  }
+
+  // Tech/Sales: hanya subscription dari customer mereka
+  return {
+    customer: {
+      activatedFromProspect: {
+        createdByUserId: currentUser.id,
+      },
+    },
+  };
+}
+
+function getInvoiceReportScope(req: Express.Request): Prisma.InvoiceWhereInput {
+  const currentUser = req.currentUser;
+  
+  if (!currentUser || currentUser.role.code === "admin") {
+    return {};
+  }
+
+  // Tech/Sales: hanya invoice dari customer mereka
+  return {
+    subscription: {
+      customer: {
+        activatedFromProspect: {
+          createdByUserId: currentUser.id,
+        },
+      },
+    },
+  };
+}
+
+function getCashTransactionReportScope(req: Express.Request): Prisma.CashTransactionWhereInput {
+  const currentUser = req.currentUser;
+  
+  if (!currentUser || currentUser.role.code === "admin") {
+    return {};
+  }
+
+  // Tech/Sales: hanya cash transaction dari customer mereka atau yang mereka create
+  return {
+    OR: [
+      // Cash transactions from their created customers
+      {
+        subscription: {
+          customer: {
+            activatedFromProspect: {
+              createdByUserId: currentUser.id,
+            },
+          },
+        },
+      },
+      // Cash transactions they created directly
+      {
+        createdByUserId: currentUser.id,
+      },
+    ],
+  };
+}
 
 reportRouter.use(authenticate);
 
@@ -49,10 +142,15 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
       subscriptionIncomeMonthAggregate,
       installationIncomeMonthAggregate,
     ] = await Promise.all([
-      db.prospect.count(),
-      db.customer.count(),
-      db.subscription.count(),
-      db.invoice.count({ where: { status: "overdue" } }),
+      db.prospect.count({ where: getProspectReportScope(req) }),
+      db.customer.count({ where: getCustomerReportScope(req) }),
+      db.subscription.count({ where: getSubscriptionReportScope(req) }),
+      db.invoice.count({ 
+        where: { 
+          status: "overdue",
+          ...getInvoiceReportScope(req),
+        } 
+      }),
       db.cashTransaction.aggregate({
         where: {
           type: "cash_in",
@@ -61,6 +159,7 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
             gte: todayStart,
             lt: tomorrowStart,
           },
+          ...getCashTransactionReportScope(req),
         },
         _sum: {
           amount: true,
@@ -74,6 +173,7 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
             gte: todayStart,
             lt: tomorrowStart,
           },
+          ...getCashTransactionReportScope(req),
         },
         _sum: {
           amount: true,
@@ -87,6 +187,7 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
             gte: financeDateFrom,
             lt: financeDateToExclusive,
           },
+          ...getCashTransactionReportScope(req),
         },
         _sum: {
           amount: true,
@@ -100,6 +201,7 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
             gte: financeDateFrom,
             lt: financeDateToExclusive,
           },
+          ...getCashTransactionReportScope(req),
         },
         _sum: {
           amount: true,
@@ -116,6 +218,7 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
           cashCategory: {
             code: "subscription_income",
           },
+          ...getCashTransactionReportScope(req),
         },
         _sum: {
           amount: true,
@@ -132,6 +235,7 @@ reportRouter.get("/summary", authorize("reports.revenue.read"), async (req, res,
           cashCategory: {
             code: "installation_fee",
           },
+          ...getCashTransactionReportScope(req),
         },
         _sum: {
           amount: true,
