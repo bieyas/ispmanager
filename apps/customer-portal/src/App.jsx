@@ -170,6 +170,40 @@ export function App() {
     });
   }, [token]);
 
+  // Version checking for auto-update
+  useEffect(() => {
+    const checkVersion = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/api/version`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        const currentVersion = window.__APP_VERSION__ || "0.1.0";
+        const latestVersion = data.version;
+
+        if (latestVersion && latestVersion !== currentVersion) {
+          console.log(`New version available: ${latestVersion} (current: ${currentVersion})`);
+          const userConfirmed = window.confirm(
+            `📦 Update tersedia: ${latestVersion}\n\nReload aplikasi sekarang untuk mendapatkan fitur dan perbaikan terbaru?`
+          );
+          if (userConfirmed) {
+            window.location.reload();
+          }
+        }
+      } catch (error) {
+        console.warn("Version check failed:", error);
+      }
+    };
+
+    // Check version immediately
+    checkVersion();
+
+    // Check every 5 minutes
+    const intervalId = setInterval(checkVersion, 5 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [apiBaseUrl]);
+
   function logout() {
     setToken("");
     setCustomerSession(null);

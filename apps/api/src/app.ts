@@ -36,6 +36,13 @@ export function createApp() {
     });
   });
 
+  app.get("/api/version", (_req, res) => {
+    return res.json({
+      version: "0.1.0",
+      updatedAt: new Date().toISOString(),
+    });
+  });
+
   app.use("/health", healthRouter);
   app.use("/auth", authRouter);
   app.use("/customer-auth", customerAuthRouter);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { defaultMapView, routes } from "./lib/constants.js";
+import { useVersionCheck } from "./hooks/useVersionCheck.js";
 import {
   formatCurrency,
   formatDate,
@@ -347,6 +348,16 @@ export function App() {
     editServicePlan,
     deleteServicePlan,
   } = useServicePlansPage({ apiFetch, servicePlans, refreshCurrentRoute });
+
+  // Version checking for auto-update
+  useVersionCheck(apiBaseUrl, (newVersion) => {
+    const userConfirmed = window.confirm(
+      `📦 Update tersedia: ${newVersion}\n\nReload aplikasi sekarang untuk mendapatkan fitur dan perbaikan terbaru?`
+    );
+    if (userConfirmed) {
+      window.location.reload();
+    }
+  });
 
   useEffect(() => {
     if (!token) return;
@@ -1162,19 +1173,19 @@ export function App() {
         onRefresh={() => refreshCurrentRoute()}
         onLogout={logout}
       >
-            {loadingRoute ? <Card><p className="text-sm text-slate-500">Memuat halaman...</p></Card> : null}
+        {loadingRoute ? <Card><p className="text-sm text-slate-500">Memuat halaman...</p></Card> : null}
 
-            <Routes>
-              <Route path="/" element={dashboardElement} />
-              <Route path="/prospects" element={prospectsElement} />
-              <Route path="/customers" element={customersElement} />
-              <Route path="/subscriptions" element={subscriptionsElement} />
-              <Route path="/finance" element={financeElement} />
-              <Route path="/operations" element={operationsElement} />
-              <Route path="/service-plans" element={servicePlansElement} />
-              <Route path="/settings" element={settingsElement} />
-              <Route path="*" element={<Navigate to={routeMap[defaultRouteForUser()]?.path || "/"} replace />} />
-            </Routes>
+        <Routes>
+          <Route path="/" element={dashboardElement} />
+          <Route path="/prospects" element={prospectsElement} />
+          <Route path="/customers" element={customersElement} />
+          <Route path="/subscriptions" element={subscriptionsElement} />
+          <Route path="/finance" element={financeElement} />
+          <Route path="/operations" element={operationsElement} />
+          <Route path="/service-plans" element={servicePlansElement} />
+          <Route path="/settings" element={settingsElement} />
+          <Route path="*" element={<Navigate to={routeMap[defaultRouteForUser()]?.path || "/"} replace />} />
+        </Routes>
       </AppShell>
     </>
   );
